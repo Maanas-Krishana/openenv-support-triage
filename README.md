@@ -1,3 +1,13 @@
+---
+title: OpenEnv Customer Support Triage
+emoji: 🛠️
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # OpenEnv: Customer Support Triage
 
 This is an **OpenEnv** compliant environment that simulates a real-world task: **Customer Support Ticket Triage**.
