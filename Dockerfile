@@ -3,7 +3,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install dependencies (requires openenv)
-RUN pip install --no-cache-dir openenv pydantic uvicorn fastapi
+RUN pip install --no-cache-dir openenv-core pydantic uvicorn fastapi
 
 # Copy files
 COPY . .
