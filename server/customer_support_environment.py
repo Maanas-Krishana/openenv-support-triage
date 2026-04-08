@@ -154,7 +154,7 @@ class CustomerSupportEnvironment(Environment):
         # Task 1: "TKT-100" (Easy, Assign to IT)
         if self.current_task["ticket_id"] == "TKT-100":
             if action.action_type == "assign" and action.department == "IT":
-                reward = 1.0
+                reward = 0.99
                 done = True
                 self.department = "IT"
                 self.status = "Resolved"
@@ -177,7 +177,7 @@ class CustomerSupportEnvironment(Environment):
                 has_refund = "refund" in reply
                 
                 if has_apology and has_refund:
-                    reward = 1.0
+                    reward = 0.99
                     done = True
                     self.status = "Resolved"
                 else:
@@ -196,7 +196,7 @@ class CustomerSupportEnvironment(Environment):
         # Task 3: "TKT-300" (Hard, Escalate!)
         elif self.current_task["ticket_id"] == "TKT-300":
             if action.action_type == "escalate":
-                reward = 1.0
+                reward = 0.99
                 done = True
                 self.status = "Resolved"
             elif action.action_type == "assign":
