@@ -13,14 +13,17 @@ except ImportError:
         from pydantic import Field
 
 class CustomerSupportAction(Action):
-    action_type: Literal["assign", "reply_and_resolve", "escalate"] = Field(
-        ..., description="The action to take: assign to a department, reply to the customer and resolve, or escalate."
+    action_type: Literal["assign", "reply_and_resolve", "escalate", "search_knowledge_base"] = Field(
+        ..., description="The action to take: assign to a department, reply to the customer and resolve, escalate, or search the internal knowledge base."
     )
     department: Optional[Literal["IT", "Billing", "Sales", "General"]] = Field(
         None, description="The department to assign to. Required if action_type is 'assign'."
     )
     reply_message: Optional[str] = Field(
         None, description="The reply message to send. Required if action_type is 'reply_and_resolve'."
+    )
+    search_query: Optional[str] = Field(
+        None, description="The search query for looking up internal KB documents. Required if action_type is 'search_knowledge_base'."
     )
 
 class CustomerSupportObservation(Observation):
@@ -29,6 +32,7 @@ class CustomerSupportObservation(Observation):
     message: str = Field(..., description="Body of the customer's message")
     department: str = Field("General", description="Current assigned department")
     status: str = Field("Open", description="Status of the ticket: Open or Resolved")
+    system_response: Optional[str] = Field(None, description="System data provided to the agent, like search engine results.")
     
     # Required OpenEnv spec fields
     reward: float = Field(0.0, description="Reward received from the last action")

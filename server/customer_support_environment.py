@@ -48,6 +48,12 @@ TASKS = [
     }
 ]
 
+KNOWLEDGE_BASE = {
+    "refund": "Standard refunds process within 3-5 business days. Double charges are processed immediately.",
+    "freeze": "Analytics graph freezing is a known P0 bug as of the recent update. Do not try to resolve, immediately escalate all tickets.",
+    "password": "Password resets can be handled by IT manually if the self-service portal is down."
+}
+
 class CustomerSupportEnvironment(Environment):
     """
     A Customer Support Ticket Triage environment.
@@ -65,6 +71,7 @@ class CustomerSupportEnvironment(Environment):
         self.message = ""
         self.department = "General"
         self.status = "Open"
+        self.system_response = None
 
         # Used to cycle through 3 tasks to provide reproducible evaluation
         self.task_idx = 0
@@ -80,8 +87,15 @@ class CustomerSupportEnvironment(Environment):
         self.ticket_id = self.current_task["ticket_id"]
         self.subject = self.current_task["subject"]
         self.message = self.current_task["message"]
+        
+        # Dynamic variable shuffling for TKT-200
+        if self.ticket_id == "TKT-200":
+            amount = random.choice([29, 49, 99, 149])
+            self.message = self.message.replace("$49", f"${amount}")
+
         self.department = "General"
         self.status = "Open"
+        self.system_response = None
         
         return CustomerSupportObservation(
             ticket_id=self.ticket_id,
@@ -89,6 +103,7 @@ class CustomerSupportEnvironment(Environment):
             message=self.message,
             department=self.department,
             status=self.status,
+            system_response=self.system_response,
             reward=0.0,
             done=False
         )
@@ -107,8 +122,33 @@ class CustomerSupportEnvironment(Environment):
                 message=self.message,
                 department=self.department,
                 status=self.status,
+                system_response=self.system_response,
                 reward=0.0,
                 done=True
+            )
+            
+        # Reset system response each turn unless it's a search
+        self.system_response = None
+
+        # Global Action: Search Knowledge Base
+        if action.action_type == "search_knowledge_base":
+            query = (action.search_query or "").lower()
+            results = [val for key, val in KNOWLEDGE_BASE.items() if key in query]
+            if results:
+                self.system_response = "Search Results: " + " | ".join(results)
+            else:
+                self.system_response = "Search Results: No relevant documents found."
+            
+            # Searching provides a slight positive neutral token reward
+            return CustomerSupportObservation(
+                ticket_id=self.ticket_id,
+                subject=self.subject,
+                message=self.message,
+                department=self.department,
+                status=self.status,
+                system_response=self.system_response,
+                reward=0.05,
+                done=False
             )
 
         # Task 1: "TKT-100" (Easy, Assign to IT)
@@ -138,14 +178,18 @@ class CustomerSupportEnvironment(Environment):
                 
                 if has_apology and has_refund:
                     reward = 1.0
-                elif has_refund:
-                    reward = 0.8
-                elif has_apology:
-                    reward = 0.4
+                    done = True
+                    self.status = "Resolved"
                 else:
-                    reward = 0.1
-                done = True
-                self.status = "Resolved"
+                    # Multi-turn interaction loop
+                    if has_refund and not has_apology:
+                        self.message += "\n\nCustomer: Thanks for the refund, but your service still caused me a lot of stress. Some apology would be nice!"
+                    elif has_apology and not has_refund:
+                        self.message += "\n\nCustomer: A simple sorry is not enough! Where is my refund??"
+                    else:
+                        self.message += "\n\nCustomer: You haven't helped me at all. Give me my money back and explain why this happened!"
+                    
+                    reward = -0.1
             else:
                 reward = -0.5
 
@@ -170,6 +214,7 @@ class CustomerSupportEnvironment(Environment):
             message=self.message,
             department=self.department,
             status=self.status,
+            system_response=self.system_response,
             reward=reward,
             done=done
         )

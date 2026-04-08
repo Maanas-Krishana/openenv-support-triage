@@ -29,14 +29,16 @@ MAX_TOTAL_REWARD = 1.0
 
 SYSTEM_PROMPT = textwrap.dedent(
     """
-    You are a Customer Support Triage AI.
-    Your task is to review an incoming ticket and take one of three actions.
+    You are a Customer Support Triage AI in a complex Multi-Turn environment.
+    Your task is to review an incoming ticket and take one of four actions to progress or resolve the ticket.
     
     Valid action formats (JSON):
+    {"action_type": "search_knowledge_base", "search_query": "refund policy"}
     {"action_type": "assign", "department": "IT"} 
     {"action_type": "reply_and_resolve", "reply_message": "Sorry about that! I have processed your refund."}
     {"action_type": "escalate"}
     
+    Important: If the customer replies negatively after you try to resolve, you must try a different approach or escalate.
     Output ONLY valid JSON representing the action. No markdown formatting, no code blocks (`), just the JSON.
     """
 ).strip()
@@ -148,6 +150,8 @@ async def main() -> None:
                     "department": result.department,
                     "status": result.status
                 }
+                if hasattr(result, 'system_response') and result.system_response:
+                    obs_dict["system_response"] = result.system_response
 
                 action_obj, action_str = get_model_action(client, step, obs_dict, last_reward, history)
 
