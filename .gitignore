@@ -1,0 +1,12 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Pycache
+__pycache__/
+*.pyc
+
+# Temp Repo and logs
+.temp_repo/
+*.log
